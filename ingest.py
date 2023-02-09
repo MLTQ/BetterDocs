@@ -9,13 +9,22 @@ from langchain.text_splitter import CharacterTextSplitter
 
 def clean_data(data):
     soup = BeautifulSoup(data)
-    text = soup.find_all("main", {"id": "main-content"})[0].get_text()
+    try:
+        text = soup.find_all("main", {"id": "main-content"})[0].get_text()
+    except:
+        text = soup.find_all("main", {"id": "main"})[0].get_text()
     return "\n".join([t for t in text.split("\n") if t])
 
 
 docs = []
 metadatas = []
 for p in Path("langchain.readthedocs.io/en/latest/").rglob("*"):
+    if p.is_dir():
+        continue
+    with open(p) as f:
+        docs.append(clean_data(f.read()))
+        metadatas.append({"source": p})
+for p in Path("pandasguide.readthedocs.io/en/latest/").rglob("*"):
     if p.is_dir():
         continue
     with open(p) as f:
@@ -34,12 +43,20 @@ documents = text_splitter.create_documents(docs, metadatas=metadatas)
 
 
 WEAVIATE_URL = os.environ["WEAVIATE_URL"]
+resource_owner_config = weaviate.AuthClientPassword(
+  username = os.environ['WEAVIATE_USERNAME'],
+  password = os.environ['WEAVIATE_PASS'],
+  #scope = "scope1 scope2" # optional, depends on the configuration of your identity provider
+  )
 client = weaviate.Client(
     url=WEAVIATE_URL,
     additional_headers={"X-OpenAI-Api-Key": os.environ["OPENAI_API_KEY"]},
+    auth_client_secret=resource_owner_config
 )
-
-client.schema.delete_class("Paragraph")
+try:
+    client.schema.delete_class("Paragraph")
+except:
+    pass
 client.schema.get()
 schema = {
     "classes": [

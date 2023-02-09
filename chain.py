@@ -52,9 +52,15 @@ class CustomChain(Chain, BaseModel):
 
 def get_new_chain1(vectorstore) -> Chain:
     WEAVIATE_URL = os.environ["WEAVIATE_URL"]
+    resource_owner_config = weaviate.AuthClientPassword(
+        username=os.environ['WEAVIATE_USERNAME'],
+        password=os.environ['WEAVIATE_PASS'],
+        # scope = "scope1 scope2" # optional, depends on the configuration of your identity provider
+    )
     client = weaviate.Client(
         url=WEAVIATE_URL,
         additional_headers={"X-OpenAI-Api-Key": os.environ["OPENAI_API_KEY"]},
+        auth_client_secret=resource_owner_config
     )
 
     _eg_template = """## Example:

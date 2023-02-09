@@ -5,13 +5,21 @@ from pathlib import Path
 import weaviate
 
 WEAVIATE_URL = os.environ["WEAVIATE_URL"]
+resource_owner_config = weaviate.AuthClientPassword(
+  username = os.environ['WEAVIATE_USERNAME'],
+  password = os.environ['WEAVIATE_PASS'],
+  #scope = "scope1 scope2" # optional, depends on the configuration of your identity provider
+  )
 client = weaviate.Client(
     url=WEAVIATE_URL,
     additional_headers={"X-OpenAI-Api-Key": os.environ["OPENAI_API_KEY"]},
+    auth_client_secret=resource_owner_config
 )
-
-client.schema.delete_class("Rephrase")
-client.schema.delete_class("QA")
+try:
+    client.schema.delete_class("Rephrase")
+    client.schema.delete_class("QA")
+except:
+    pass
 client.schema.get()
 schema = {
     "classes": [
